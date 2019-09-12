@@ -1,0 +1,10 @@
+#!/bin/bash
+
+if ! [ -d camera_calibration_API ]; then
+    git clone "https://github.com/Abhijit-2592/camera_calibration_API"
+fi
+
+python "camera_calibration_API/camera_calibration.py" \
+    --images_dir "$1" \
+     -pt chessboard -pr 9 -pc 7 -d 1.0 \
+     -cw 800 -ch 448

@@ -1,0 +1,27 @@
+#!/usr/bin/python
+
+import atexit
+import cv2
+import sys
+
+from camera import Camera
+from window import ImageWindow
+
+if len(sys.argv) > 1:
+    camera_index = int(sys.argv[1])
+else:
+    camera_index = 0
+
+camera = Camera(camera_index, (800, 448, 20))
+window = ImageWindow()
+atexit.register(cv2.destroyAllWindows)
+
+for frame in camera.frames():
+    window.add_image(frame)
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    window.add_gray_image(gray)
+    _, thresh = cv2.threshold(gray, 200, 255, cv2.THRESH_BINARY_INV)
+    window.add_gray_image(thresh)
+
+    window.show()
+    window.clear()

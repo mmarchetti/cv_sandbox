@@ -6,6 +6,7 @@ import math
 import numpy as np
 import os
 import sys
+from datetime import datetime
 
 from utils import new_image
 
@@ -15,7 +16,7 @@ screen_size = np.array([480, 800])
 reserved = np.array([toolbar_size, 0])
 window_size = screen_size - reserved
 
-ZOOM_TOOL, INFO_TOOL, QUIT_TOOL, NUM_TOOLS = range(4)
+ZOOM_TOOL, INFO_TOOL, CAPTURE_TOOL, QUIT_TOOL, NUM_TOOLS = range(5)
 
 
 class ImageWindow:
@@ -56,7 +57,7 @@ class ImageWindow:
         origin = (frame_size - dimensions) // 2
         return origin, dimensions, scale
 
-    def render(self):
+    def render(self, include_tools=True):
         if self.zoomed_image is not None and self.zoomed_image < len(self.images):
             # display a single big image
             images = [self.images[self.zoomed_image]]
@@ -80,7 +81,8 @@ class ImageWindow:
                 y = 0
                 x += frame_size[1]
 
-        self.toolbar.render(result, 0, window_size[0])
+        if include_tools:
+            self.toolbar.render(result, 0, window_size[0])
         return result
 
     def show(self):
@@ -104,6 +106,8 @@ class ImageWindow:
             self.zoom_click(*args)
         elif tool == INFO_TOOL:
             self.info_click(*args)
+        elif tool == CAPTURE_TOOL:
+            self.capture_click(*args)
         self.show()
 
     def get_clicked_image(self, x, y):
@@ -136,6 +140,12 @@ class ImageWindow:
 
     def info_click(self, event, x, y, flags, param):
         self.info_selection = self.get_clicked_image(x, y)
+
+    def capture_click(self, event, x, y, flags, param):
+        image = self.render(include_tools=False)
+        timestamp = datetime.now().replace(microsecond=0).isoformat().replace(':', '.')
+        filename = 'saved/%s.png' % timestamp
+        cv2.imwrite(filename, image)
 
     def render_info_image(self):
         if not self.info_selection:

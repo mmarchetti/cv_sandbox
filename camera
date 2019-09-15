@@ -4,7 +4,7 @@ import atexit
 import cv2
 import sys
 
-from camera import Camera
+from camera import LifeCam3000, RPi2Cam
 from window import ImageWindow
 
 if len(sys.argv) > 1:
@@ -12,7 +12,9 @@ if len(sys.argv) > 1:
 else:
     camera_index = 0
 
-camera = Camera(camera_index, (800, 448, 20))
+#camera = LifeCam3000(camera_index)
+camera = RPi2Cam()
+
 window = ImageWindow()
 atexit.register(cv2.destroyAllWindows)
 

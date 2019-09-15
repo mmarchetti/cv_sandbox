@@ -9,22 +9,37 @@ from gi.repository import Gst
 
 Gst.init(None)
 
-class Camera:
-    def __init__(self, device_index, mode=(800, 448, 20)):
+def LifeCam3000(index=0, width=800, height=448, fps=20):
+    path = ('v4l2src device=/dev/video{index} ! '
+            'video/x-raw,width={width},height={height},framerate={fps}/1 ! '
+            'videoconvert ! video/x-raw,format=BGR ! '
+            'appsink name=sink{index}')
 
-        path = ('v4l2src device=/dev/video%d ! '
-                'video/x-raw,width=%d,height=%d,framerate=%d/1 ! '
-                'videoconvert ! video/x-raw,format=BGR ! '
-                'appsink name=sink%d' %
-                (device_index, mode[0], mode[1], mode[2], device_index))
+    return Camera(width, height, fps, path)
+
+
+def RPi2Cam(width=1920, height=1080, fps=30, flip_method=6):
+    path = ('nvarguscamerasrc ! video/x-raw(memory:NVMM),width={width}, height={height}, framerate={fps}/1, format=NV12 ! '
+            'nvvidconv flip-method=%d ! video/x-raw,width=960,height=540 ! '
+            'videoconvert ! video/x-raw,format=BGR ! '
+            'appsink name=sink{index}' % flip_method)
+
+    return Camera(0, width, height, fps, path)
+
+class Camera:
+    def __init__(self, index, width, height, fps, path_template):
+
+        path = path_template.format(index=index, width=width, height=height, fps=fps)
 
         print '\\\n  !'.join(path.split('!'))
-        self.width, self.height, self.fps = mode
+        self.width = width
+        self.height = height
+        self.fps = fps
 
         self.pipe = Gst.parse_launch(path)
         self.pipe.set_state(Gst.State.PLAYING)
 
-        self.appsink = self.pipe.get_by_name("sink%d" % device_index)
+        self.appsink = self.pipe.get_by_name("sink%d" % index)
         self.appsink.set_property("emit-signals", True)
         self.appsink.set_property("sync", False)
         self.appsink.set_property("max-buffers", 1)
@@ -49,7 +64,6 @@ class Camera:
         caps = sample.get_caps()
         info = caps.get_structure(0)
         data = buf.extract_dup(0, buf.get_size())
-
         return np.ndarray((info.get_value('height'), info.get_value('width'), 3), buffer=data, dtype=np.uint8)
 
     def matrix(self):
